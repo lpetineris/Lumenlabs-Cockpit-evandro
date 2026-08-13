@@ -146,6 +146,15 @@ errada, peça para quem te passou o projeto trocar — é uma linha no arquivo
 
 ## Se der problema
 
+**Comece por aqui:** na pasta `LumenCockpit` da sua Pasta Pessoal, dê duplo
+clique em **`Verificar.command`**. Ele confere tudo do lado do Mac — se o
+painel está no ar, qual é o endereço de hoje, em que rede o Mac está — e diz
+o que fazer. Só lê; não muda nada.
+
+Se ele terminar com "Nada errado deste lado", o painel está funcionando e o
+problema está na ligação com o iPad — quase sempre rede diferente ou endereço
+digitado errado.
+
 **O painel não abre no iPad.**
 Confirme que os dois estão na mesma rede Wi-Fi. Muita casa tem duas redes (uma
 normal e uma "5G") — precisam ser a mesma. Confirme também que o Mac está

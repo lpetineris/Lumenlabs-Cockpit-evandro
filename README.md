@@ -50,6 +50,7 @@ avisar, e o atalho salvo no iPad para de abrir. Para descobrir o nome:
 |---|---|
 | `LEIA-ME.md` | O guia de instalação, para quem nunca usou Terminal |
 | `Instalar.command` | Instalação por duplo clique |
+| `Verificar.command` | Diagnóstico por duplo clique, quando o iPad não abre |
 | `blocos.json` | Modelo dos botões, de onde uma instalação nova parte |
 | `blocos.local.json` | Os botões desta máquina — fora do git, criado na 1ª execução |
 | `index.html` | A página: estrutura, estilo e a montagem da grade |
