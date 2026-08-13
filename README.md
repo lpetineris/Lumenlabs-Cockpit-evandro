@@ -132,6 +132,35 @@ navegador do Mac ele continua.
 Vale desligar o bloqueio automático do iPad (Ajustes → Tela e Brilho), senão a
 tela apaga no meio do uso.
 
+## O painel roda num iPad de 2012
+
+Isto manda em decisões que de outro modo pareceriam esquisitas. O iPad que usa
+este Cockpit está preso no **iOS 9.3.5** — a última versão dos iPads de 32 bits.
+O Safari dele é de 2015 e não tem coisas que hoje são banais:
+
+| Recurso | Chegou no Safari | O que se usa aqui |
+|---|---|---|
+| `fetch` | 10.1 | `XMLHttpRequest`, no `buscarJSON` e no `pedir` da ponte |
+| CSS Grid | 10.1 | flexbox em todo o layout |
+| `gap` em flexbox | 14.1 | `> * + * { margin-left }` |
+| `aspect-ratio` | 15 | altura em pixels, que o canvas de largura fixa permite |
+| `{once:true}` em listener | 10 | `removeEventListener` na mão |
+| `Element.closest` | instável no 9 | subida manual pela árvore, no `ponte.js` |
+
+**O `fetch` era o pior de todos**, e valeu um diagnóstico longo: ele não degrada
+nada, ele derruba. Não existindo a função, a linha que carregava os botões
+lançava `ReferenceError` e **o script inteiro parava ali** — inclusive o
+dimensionamento do canvas, várias linhas abaixo. Sem ele a página ficava nos
+1920px fixos e o iPad mostrava só o canto superior esquerdo, o que parecia
+"o cabeçalho não aparece" e mandou a investigação para o lado errado duas vezes.
+
+Se for mexer aqui: nada de `grid`, `gap`, `aspect-ratio`, `fetch`, arrow
+functions, `let`/`const`, template literals ou spread. O que está escrito é ES5
+e flexbox de propósito, e funciona igual nos navegadores de hoje — é um arquivo
+só para os dois mundos, não uma versão degradada.
+
+Variáveis CSS (`var(--cor)`) ficaram: essas o iOS 9.3 já tem.
+
 ## Layout
 
 A página é desenhada numa largura fixa e ampliada por JS até preencher a

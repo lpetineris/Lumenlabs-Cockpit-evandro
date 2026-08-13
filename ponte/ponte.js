@@ -50,16 +50,23 @@
     }
   ];
 
+  /* XMLHttpRequest e não `fetch`: o iPad que usa este painel roda iOS 9, cujo
+     Safari é anterior ao fetch. Com fetch, tocar num bloco não fazia nada e a
+     tela de ajuste não gravava — o erro acontecia antes de qualquer aviso
+     aparecer. As Promises ficam, porque o Safari 9 já as tem. */
   function pedir(caminho, corpo) {
-    return fetch(caminho, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(Object.assign({ token: TOKEN }, corpo))
-    }).then(function (r) {
-      return r.json().then(function (dados) {
-        if (!r.ok) throw new Error(dados.erro || 'o MacBook recusou');
-        return dados;
-      });
+    return new Promise(function (resolver, rejeitar) {
+      var req = new XMLHttpRequest();
+      req.open('POST', caminho, true);
+      req.setRequestHeader('Content-Type', 'application/json');
+      req.onload = function () {
+        var dados;
+        try { dados = JSON.parse(req.responseText); } catch (e) { dados = {}; }
+        if (req.status >= 200 && req.status < 300) return resolver(dados);
+        rejeitar(new Error(dados.erro || 'o Mac recusou'));
+      };
+      req.onerror = function () { rejeitar(new Error('não consegui falar com o Mac')); };
+      req.send(JSON.stringify(Object.assign({ token: TOKEN }, corpo)));
     });
   }
 
@@ -102,8 +109,19 @@
      2. Os toques viram ações no Mac
      ───────────────────────────────────────────── */
 
+  /* Sobe a árvore até achar o link. Fazia isso com `closest()`, que é instável
+     no Safari do iOS 9 — e aqui um erro não quebraria um detalhe: nenhum toque
+     do painel funcionaria, porque é esta função que intercepta todos eles. */
+  function linkAcima(no) {
+    while (no && no !== canvas) {
+      if (no.nodeType === 1 && no.tagName === 'A' && no.getAttribute('href')) return no;
+      no = no.parentNode;
+    }
+    return null;
+  }
+
   canvas.addEventListener('click', function (evento) {
-    var link = evento.target.closest('a[href]');
+    var link = linkAcima(evento.target);
     if (!link) return;
 
     var href = link.getAttribute('href');

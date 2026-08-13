@@ -138,13 +138,16 @@
     padding:0 48px;
     border-bottom:1px solid var(--border-on-dark);
   }
-  .brand{display:flex; align-items:center; gap:24px;}
+  .brand{display:flex; align-items:center;}
+  /* `gap` em flexbox só chegou no Safari 14; margem no irmão seguinte faz o
+     mesmo e vale em qualquer navegador. Vários pares assim daqui para baixo. */
+  .brand > * + *{margin-left:24px;}
   .brand-mark{
     display:flex;
     align-items:center;
-    gap:6px;
     height:50px;
   }
+  .brand-mark .bar + .bar{margin-left:6px;}
   .brand-mark .bar{
     width:11px;
     border-radius:8px;
@@ -158,7 +161,10 @@
   .brand-text span{color:var(--lumen-orange);}
   .brand-sub{font-size:14px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--stone-on-dark); margin-top:3px;}
 
-  .top-right{display:flex; align-items:center; gap:24px;}
+  .top-right{display:flex; align-items:center;}
+  /* A engrenagem que a ponte injeta entra antes do botão de tela cheia; como
+     a regra é por irmão, ela ganha o espaçamento sozinha, sem ajuste no JS. */
+  .top-right > * + *{margin-left:24px;}
   /* Botão de tela cheia, para o painel aberto no navegador do Mac.
      No iPad ele não aparece: o Safari não tem a API de tela cheia, e lá quem
      resolve isso é o atalho na Tela de Início. O JS lá embaixo o esconde. */
@@ -180,7 +186,8 @@
   /* ===== CLIMA =====
      Fica escondido até a primeira resposta chegar: um painel com "--°" parado
      no alto é pior do que um painel sem clima. Se a consulta falhar, some. */
-  .clima{display:flex; align-items:center; gap:12px;}
+  .clima{display:flex; align-items:center;}
+  .clima > * + *{margin-left:12px;}
   .clima[hidden]{display:none;}
   .clima-icone{font-size:34px; line-height:1;}
   .clima-temp{
@@ -201,48 +208,74 @@
     color:white; font-weight:700; font-family:var(--display); font-size:18px;
   }
 
-  /* ===== LAYOUT ===== */
+  /* ===== LAYOUT =====
+     Flexbox, e não grid, de propósito: o iPad que usa este painel roda iOS 9,
+     cujo Safari é de antes do CSS Grid existir. Com grid a página não quebrava
+     um pouco — ela caía inteira, porque `display:grid` vira `block` e todas as
+     colunas empilham. Flexbox funciona nele e nos navegadores de hoje, então é
+     um arquivo só para os dois. Mesma razão para não haver `gap` em lugar
+     nenhum daqui para baixo: `gap` em flexbox só chegou no Safari 14. */
   .layout{
     position:relative; z-index:2;
-    display:grid;
-    grid-template-columns:1fr 460px;
+    display:flex;
     /* a altura do canvas é definida pelo JS conforme a janela, então aqui é
        proporção e não um número fixo — do contrário sobrariam faixas pretas
        em qualquer tela que não fosse 16:9. */
     height:calc(100% - 104px);
   }
-  .main{ padding:40px 32px 40px 48px; overflow:hidden; display:flex; flex-direction:column; }
-  .side{ padding:40px 48px 40px 24px; border-left:1px solid var(--border-on-dark); overflow:hidden; }
+  .main{
+    padding:40px 32px 40px 48px; overflow:hidden;
+    display:flex; flex-direction:column;
+    /* ocupa o que sobrar da largura; o min-width:0 impede que um bloco largo
+       empurre a coluna lateral para fora da tela */
+    flex:1 1 auto; min-width:0;
+  }
+  .side{
+    padding:40px 48px 40px 24px; border-left:1px solid var(--border-on-dark);
+    overflow:hidden;
+    flex:0 0 460px; width:460px;
+  }
 
   /* ===== RETRATO =====
      O iPad às vezes é usado em pé. A coluna lateral desce para baixo da
      grade, e os dois cartões passam a dividir a largura em vez de empilhar. */
   #canvas.retrato .layout{
-    grid-template-columns:1fr;
     /* Grade e atalhos ficam com a altura natural, um debaixo do outro, e a
        sobra cai no fim da tela. Esticar a grade jogaria os atalhos para a
        borda de baixo e abriria um vão preto no meio da página — pior do que
        a sobra ficar toda numa ponta só. */
-    grid-template-rows:auto 1fr;
+    flex-direction:column;
   }
-  #canvas.retrato .main{ padding:40px 48px 12px 48px; }
+  #canvas.retrato .main{
+    padding:40px 48px 12px 48px;
+    flex:0 0 auto;   /* altura natural */
+  }
   /* Em pé as colunas dividem a largura em vez de serem 200px fixos. São 5:
      com 3 os blocos ficavam grandes demais para o pouco que cada um mostra.
      A grade fica ancorada no topo e a faixa de atalhos embaixo, então a sobra
      de altura cai entre as duas — separando as seções, em vez de virar uma
      borda preta numa das pontas. */
-  #canvas.retrato .launch-grid{
-    grid-template-columns:repeat(5, 1fr);
+  /* Cinco por linha em pé. Como o canvas em pé tem 1080 fixos e o .main come
+     48 de cada lado, sobram 984: cinco blocos de 176 mais 20 de margem cada um
+     dão 980 e cabem com folga. Conta fechada em pixels justamente porque a
+     largura do canvas nunca muda. */
+  #canvas.retrato .launch-grid .tile{
+    width:176px;
+    height:176px;
   }
   #canvas.retrato .side{
     border-left:none;
     border-top:1px solid var(--border-on-dark);
     padding:32px 48px 40px 48px;
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:16px;
-    align-content:start;
+    display:flex;
+    align-items:flex-start;   /* os cartões ficam com a altura do conteúdo */
+    flex:1 1 auto;
+    width:auto;
   }
+  /* os dois cartões dividem a largura; o vão de 16px vira margem, por falta de
+     `gap` no Safari antigo */
+  #canvas.retrato .side > .card{ flex:1 1 0; min-width:0; margin:0 0 0 16px; }
+  #canvas.retrato .side > .card:first-child{ margin-left:0; }
   #canvas.retrato .card{ margin-bottom:0; }
 
   /* Em pé a barra de cima tem 1080 de largura em vez de 1920, e o clima entrou
@@ -251,7 +284,7 @@
      está implícita — ficam o ícone, a temperatura e a máxima/mínima. */
   #canvas.retrato .brand-sub{ display:none; }
   #canvas.retrato .brand-text{ font-size:28px; }
-  #canvas.retrato .top-right{ gap:16px; }
+  #canvas.retrato .top-right > * + *{ margin-left:16px; }
   #canvas.retrato .clima-cidade{ display:none; }
 
   .section-title{
@@ -262,14 +295,13 @@
 
   /* ===== LAUNCH GRID ===== */
   .launch-grid{
-    display:grid;
-    /* colunas fixas de 200px: entram quantas couberem na largura disponível,
-       em vez de esticar para preencher. */
-    grid-template-columns:repeat(auto-fill, 200px);
-    gap:20px;
-    /* Os blocos são quadrados (ver aspect-ratio abaixo), então as linhas têm a
-       altura natural deles e ficam ancoradas no topo em vez de esticar. */
-    align-content:start;
+    /* flexbox com quebra faz o mesmo que `repeat(auto-fill, 200px)` fazia:
+       entram quantos blocos couberem na largura, em vez de esticarem para
+       preencher. O vão de 20px vira margem em cada bloco, porque `gap` não
+       existe no Safari do iPad. */
+    display:flex;
+    flex-wrap:wrap;
+    align-content:flex-start;
     flex:1;
     min-height:0;
     /* se um dia houver blocos demais para caber, rola em vez de cortar */
@@ -281,8 +313,14 @@
   .launch-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16); border-radius:8px;}
   .launch-grid::-webkit-scrollbar-track{background:transparent;}
   .tile{
-    /* quadrado: a altura acompanha a largura da coluna */
-    aspect-ratio:1 / 1;
+    /* Quadrado por altura declarada, e não por `aspect-ratio` — que só existe
+       no Safari 15. Dá para fixar em pixels porque o canvas tem largura
+       constante (1920 deitado, 1080 em pé) e é o `transform: scale` que o
+       ajusta à tela; nada aqui depende do tamanho real do aparelho. */
+    width:200px;
+    height:200px;
+    flex:0 0 auto;
+    margin:0 20px 20px 0;
     border-radius:24px;
     padding:24px;
     display:flex;
@@ -383,14 +421,14 @@
      ruim de acertar com o dedo. Viraram quadrados de 100px — 200 pixels físicos
      na tela 4K — reaproveitando as mesmas classes de cor dos blocos grandes. */
   .atalho-grade{
-    display:grid;
-    grid-template-columns:repeat(auto-fill, 100px);
-    justify-content:space-between;
-    gap:12px;
+    display:flex;
+    flex-wrap:wrap;
   }
   .atalho{
     width:100px;
-    aspect-ratio:1 / 1;
+    height:100px;      /* quadrado sem `aspect-ratio`, igual aos blocos grandes */
+    flex:0 0 auto;
+    margin:0 12px 12px 0;
     border-radius:16px;
     padding:12px;
     display:flex;
@@ -540,9 +578,37 @@
     document.dispatchEvent(new CustomEvent('cockpit:desenhado'));
   }
 
+  /* ── Buscar JSON sem `fetch` ──
+     O `fetch` só chegou no Safari 10.1, e o iPad que usa este painel roda iOS 9.
+     Isso não degradava o painel: `fetch` nem existe como função lá, então a
+     linha que carregava os botões lançava ReferenceError e derrubava o script
+     INTEIRO. Tudo abaixo dela deixava de rodar — inclusive o dimensionamento do
+     canvas, e sem ele a página ficava no tamanho fixo de 1920px mostrando só o
+     canto superior esquerdo. Cabeçalho, relógio e engrenagem ficavam fora da
+     tela: era este o bug, e não o layout.
+
+     XMLHttpRequest existe desde sempre e faz o mesmo aqui. As Promises
+     continuam, porque essas o Safari 9 já tem. */
+  function buscarJSON(url){
+    return new Promise(function(resolver, rejeitar){
+      var req = new XMLHttpRequest();
+      /* sem `cache: no-store`, que é opção do fetch: o parâmetro variável
+         cumpre o mesmo papel de nunca servir uma cópia velha */
+      req.open('GET', url + (url.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now(), true);
+      req.onload = function(){
+        if (req.status < 200 || req.status >= 300) {
+          return rejeitar(new Error('HTTP ' + req.status));
+        }
+        try { resolver(JSON.parse(req.responseText)); }
+        catch (e) { rejeitar(e); }
+      };
+      req.onerror = function(){ rejeitar(new Error('falha de rede')); };
+      req.send();
+    });
+  }
+
   function carregar(){
-    return fetch('blocos.json', {cache: 'no-store'})
-      .then(function(r){ return r.json(); })
+    return buscarJSON('blocos.json')
       .then(desenhar)
       .catch(function(){
         document.getElementById('grade').appendChild(
@@ -572,7 +638,11 @@
        baixo, então precisam sair da altura — senão o pé do painel passaria do
        fim da tela pela mesma medida. */
     var recuo = parseFloat(getComputedStyle(document.body).paddingTop) || 0;
-    canvas.classList.toggle('retrato', retrato);
+    /* add/remove explícitos: o segundo argumento do `toggle` é ignorado em
+       WebKits antigos, e ali ele viraria um alternador de verdade — a página
+       trocaria de orientação a cada redimensionamento. */
+    if (retrato) canvas.classList.add('retrato');
+    else canvas.classList.remove('retrato');
     canvas.style.width  = base + 'px';
     canvas.style.height = ((window.innerHeight - recuo) / s) + 'px';
     canvas.style.transform = 'scale(' + s + ')';
@@ -630,8 +700,7 @@
       + '&daily=temperature_2m_max,temperature_2m_min'
       + '&timezone=auto&forecast_days=1';
 
-    fetch(url, {cache: 'no-store'})
-      .then(function(r){ return r.json(); })
+    buscarJSON(url)
       .then(function(d){
         var tempo = tempoDe(d.current.weather_code);
         document.getElementById('climaIcone').textContent = tempo.icone;
@@ -659,7 +728,14 @@
   /* espera a configuração chegar para saber a cidade; depois, de meia em meia
      hora — bem mais rápido do que o tempo muda, e com um número irrisório de
      consultas */
-  document.addEventListener('cockpit:desenhado', mostrarClima, {once: true});
+  /* `{once: true}` como terceiro argumento só é entendido a partir do Safari 10;
+     no 9 ele é lido como `useCapture` e o ouvinte nunca se remove. Removê-lo na
+     mão faz o mesmo em qualquer versão. */
+  function climaNaPrimeiraVez(){
+    document.removeEventListener('cockpit:desenhado', climaNaPrimeiraVez);
+    mostrarClima();
+  }
+  document.addEventListener('cockpit:desenhado', climaNaPrimeiraVez);
   setInterval(mostrarClima, 30 * 60 * 1000);
 
   /* ── Botão de tela cheia ──
