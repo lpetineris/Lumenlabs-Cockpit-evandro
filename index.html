@@ -145,19 +145,19 @@
   .brand-mark{
     display:flex;
     align-items:center;
-    height:50px;
+    height:62px;
   }
-  .brand-mark .bar + .bar{margin-left:6px;}
+  .brand-mark .bar + .bar{margin-left:8px;}
   .brand-mark .bar{
-    width:11px;
+    width:14px;
     border-radius:8px;
   }
-  .brand-mark .b1{height:29px; background:var(--lumen-teal);}
-  .brand-mark .b2{height:50px; background:var(--lumen-orange);}
-  .brand-mark .b3{height:38px; background:var(--lumen-teal);}
-  .brand-mark .b4{height:26px; background:var(--lumen-off);}
-  .brand-mark .b5{height:21px; background:var(--lumen-orange); opacity:.85;}
-  .brand-text{font-family:var(--display); font-weight:700; font-size:32px; letter-spacing:-0.02em; color:var(--text-on-dark);}
+  .brand-mark .b1{height:36px; background:var(--lumen-teal);}
+  .brand-mark .b2{height:62px; background:var(--lumen-orange);}
+  .brand-mark .b3{height:47px; background:var(--lumen-teal);}
+  .brand-mark .b4{height:32px; background:var(--lumen-off);}
+  .brand-mark .b5{height:26px; background:var(--lumen-orange); opacity:.85;}
+  .brand-text{font-family:var(--display); font-weight:700; font-size:40px; letter-spacing:-0.02em; color:var(--text-on-dark);}
   .brand-text span{color:var(--lumen-orange);}
   .brand-sub{font-size:14px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--stone-on-dark); margin-top:3px;}
 
@@ -203,7 +203,10 @@
   .clock{display:flex; align-items:baseline; justify-content:flex-end;}
   .clock > * + *{margin-left:16px;}
   .clock-time{font-family:var(--display); font-size:40px; font-weight:700; letter-spacing:-0.02em; color:var(--text-on-dark); font-variant-numeric:tabular-nums;}
-  .clock-date{font-size:26px; color:var(--stone-on-dark); white-space:nowrap;}
+  /* Mesma fonte, tamanho e cor do horário: as duas passam a ler como uma
+     informação só, em vez de um título com legenda. */
+  .clock-date{font-family:var(--display); font-size:40px; font-weight:700;
+    letter-spacing:-0.02em; color:var(--text-on-dark); white-space:nowrap;}
   /* o avatar acompanha os dois botões: os três eram 44px e formavam um conjunto */
   .profile{
     width:54px; height:54px; border-radius:50%;
@@ -270,7 +273,7 @@
      de altura. Sai o subtítulo, que é decorativo, e a cidade do clima, que já
      está implícita — ficam o ícone, a temperatura e a máxima/mínima. */
   #canvas.retrato .brand-sub{ display:none; }
-  #canvas.retrato .brand-text{ font-size:28px; }
+  #canvas.retrato .brand-text{ font-size:34px; }
   #canvas.retrato .top-right > * + *{ margin-left:16px; }
   #canvas.retrato .clima-cidade{ display:none; }
   /* Em pé sai também a linha de condição e máxima/mínima, ficando só o ícone e
@@ -282,6 +285,12 @@
      grande que se pede numa tela pequena, e a barra deixa de depender do
      comprimento do nome do dia. */
   #canvas.retrato .clock-semana{ display:none; }
+  /* Em pé a barra tem 1080 e não 1920, e o par data+hora é o item mais largo
+     dela. Os dois descem juntos, para continuarem do mesmo tamanho um do outro.
+     Medido com a data mais longa em pé ("31 de dezembro"): com 40px a folga era
+     de 9px, o que não sobrevive à troca do mês. */
+  #canvas.retrato .clock-time,
+  #canvas.retrato .clock-date{ font-size:32px; }
 
   .section-title{
     font-family:var(--display); font-size:24px; font-weight:700; letter-spacing:-0.02em;
@@ -583,23 +592,32 @@
   /* ── Relógio ── */
   var elTime = document.getElementById('clockTime');
   var elDate = document.getElementById('clockDate');
+  /* Nomes escritos aqui, e não pedidos ao `toLocaleDateString`.
+
+     O Safari do iOS 9 aceita o objeto de opções e o ignora: pedir
+     `{weekday:'long'}` devolvia a data inteira, e pedir `{day, month}` também —
+     as duas partes vinham iguais e a data aparecia duplicada, lado a lado. O
+     mesmo valia para a hora, que saía com segundos porque `{hour, minute}` era
+     descartado do mesmo jeito.
+
+     Montando na mão o resultado é o mesmo em qualquer navegador, e o painel é
+     em português fixo de qualquer forma. */
+  var DIAS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira',
+              'Quinta-feira', 'Sexta-feira', 'Sábado'];
+  var MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+               'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
+  function doisDigitos(n){ return (n < 10 ? '0' : '') + n; }
+
   function tick(){
     var d = new Date();
-    elTime.textContent = d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-    /* "segunda-feira, 10 de agosto" → só a primeira letra em maiúscula.
-       O capitalize do CSS deixaria "10 De Agosto".
+    elTime.textContent = doisDigitos(d.getHours()) + ':' + doisDigitos(d.getMinutes());
 
-       O dia da semana vai num elemento próprio para o CSS poder escondê-lo em
-       pé, onde a barra tem 1080 e não 1920. Sem isso o cabeçalho transbordava
-       nas datas mais longas: "Segunda-feira, 28 de fevereiro" é 4 caracteres
-       maior que a de hoje, e a folga medida já era zero. */
-    var semana = d.toLocaleDateString('pt-BR', {weekday:'long'});
-    var resto  = d.toLocaleDateString('pt-BR', {day:'numeric', month:'long'});
+    /* O dia da semana vai num elemento próprio para o CSS poder escondê-lo em
+       pé, onde a barra tem 1080 e não 1920. */
     elDate.textContent = '';
-    var elSemana = elemento('span', 'clock-semana',
-      semana.charAt(0).toUpperCase() + semana.slice(1) + ', ');
-    elDate.appendChild(elSemana);
-    elDate.appendChild(document.createTextNode(resto));
+    elDate.appendChild(elemento('span', 'clock-semana', DIAS[d.getDay()] + ', '));
+    elDate.appendChild(document.createTextNode(d.getDate() + ' de ' + MESES[d.getMonth()]));
   }
   tick();
   setInterval(tick, 15000);
