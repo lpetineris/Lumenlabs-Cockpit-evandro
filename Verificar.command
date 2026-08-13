@@ -90,11 +90,13 @@ if [ -z "$IP_REDE" ]; then
 else
   COD_REDE=$(curl -s -o /dev/null --max-time 5 -w "%{http_code}" "http://$IP_REDE:8787/" 2>/dev/null)
   if [ "$COD_REDE" = "200" ]; then
-    echo "     OK — aceita conexões da rede (testado em $IP_REDE)"
+    # Passar aqui NÃO garante que o iPad consegue entrar: um pedido do Mac para
+    # o próprio IP volta por dentro da máquina e não passa pelo filtro de
+    # entrada do firewall. Quem responde de verdade por isso é o item 5.
+    echo "     Serve nesse endereço ($IP_REDE)."
+    echo "     Isto ainda não prova que o iPad entra — veja o item 5."
   else
-    echo "     FALHOU — não responde em $IP_REDE, só em localhost."
-    echo "     É quase certo que o firewall do macOS está bloqueando."
-    echo "     Veja o item 5."
+    echo "     FALHOU — não responde nem em $IP_REDE."
     PROBLEMAS=$((PROBLEMAS+1))
   fi
 fi
@@ -106,28 +108,49 @@ echo
 # aceitar conexões. Quem responde "Recusar" — ou quem nunca viu a pergunta,
 # porque o serviço subiu sozinho no login sem ninguém na frente da tela —
 # fica com o painel funcionando no Mac e invisível para o iPad.
-echo "  5. Firewall do macOS"
+echo "  5. Firewall do macOS  <<< O ITEM QUE IMPORTA"
 FW=/usr/libexec/ApplicationFirewall/socketfilterfw
-if [ -x "$FW" ]; then
+if [ ! -x "$FW" ]; then
+  echo "     Não consegui consultar."
+else
   ESTADO=$("$FW" --getglobalstate 2>/dev/null)
   case "$ESTADO" in
     *"disabled"*|*"State = 0"*)
-      echo "     Desligado — não é ele que está barrando." ;;
+      echo "     Desligado — não é ele que está barrando o iPad."
+      ;;
     *)
-      echo "     LIGADO."
-      BLOQ=$("$FW" --getblockall 2>/dev/null)
-      case "$BLOQ" in
-        *"enabled"*) echo "     E está em \"bloquear todas as conexões\"." ;;
-      esac
+      echo "     Ligado. Vendo se o python3 tem permissão de entrada..."
       echo
-      echo "     Se o item 4 falhou, resolva assim:"
-      echo "       Ajustes do Sistema → Rede → Firewall → Opções"
-      echo "       e permita conexões de entrada para \"python3\"."
-      echo "       Ou desligue o Firewall (numa rede doméstica é aceitável)."
+      # Pergunta a regra de verdade, em vez de deduzir de um teste de rede.
+      # O /usr/bin/python3 é um atalho que chama o Python das Ferramentas de
+      # Linha de Comando, e o firewall às vezes registra um, às vezes o outro —
+      # por isso os dois são consultados.
+      LIBERADO=0
+      BLOQUEADO=0
+      for BIN in /usr/bin/python3 \
+                 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/*/Resources/Python.app; do
+        [ -e "$BIN" ] || continue
+        R=$("$FW" --getappblocked "$BIN" 2>/dev/null)
+        case "$R" in
+          *permitted*) echo "     permitido:  $BIN"; LIBERADO=1 ;;
+          *blocked*)   echo "     BLOQUEADO:  $BIN"; BLOQUEADO=1 ;;
+          *)           echo "     não consta: $BIN" ;;
+        esac
+      done
+      echo
+      if [ "$BLOQUEADO" = "1" ] || [ "$LIBERADO" = "0" ]; then
+        echo "     ESTE É O PROBLEMA. O painel funciona no Mac e o iPad não entra."
+        echo
+        echo "     Conserto mais simples:"
+        echo "       Ajustes do Sistema → Rede → Firewall → DESLIGAR"
+        echo "     (numa rede doméstica isso é aceitável; o Mac continua"
+        echo "      protegido pelo roteador)"
+        PROBLEMAS=$((PROBLEMAS+1))
+      else
+        echo "     OK — o python3 pode receber conexões. Não é o firewall."
+      fi
       ;;
   esac
-else
-  echo "     Não consegui consultar."
 fi
 echo
 
