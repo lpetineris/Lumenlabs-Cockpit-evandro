@@ -30,12 +30,18 @@ painéis de botões que streamers usam.
 Abra este endereço no navegador do **Mac**:
 
 ```
-https://github.com/lpetineris/Lumenlabs-Cockpit-evandro
+https://github.com/lpetineris/Lumenlabs-Cockpit-evandro/archive/refs/heads/main.zip
 ```
 
-Clique no botão verde **Code** e depois em **Download ZIP**.
+O download começa sozinho — não precisa clicar em nada. O arquivo vai para a
+pasta Downloads.
 
-O arquivo vai para a pasta Downloads.
+Copie o endereço inteiro, até o `.zip` do fim. Se sobrar algum caractere colado
+no final, o GitHub responde "404".
+
+> Se preferir ver o projeto antes de baixar, a página é
+> <https://github.com/lpetineris/Lumenlabs-Cockpit-evandro> — lá o download
+> está no botão verde **Code** → **Download ZIP**.
 
 ## Passo 2 — Abrir o arquivo baixado
 
