@@ -3,8 +3,8 @@
    Faz duas coisas:
      1. Intercepta o toque nos blocos e atalhos e manda a ação para o Mac
         executar, em vez de abrir qualquer coisa aqui no iPad.
-     2. Oferece a tela de ajuste (a engrenagem no topo), que edita as três
-        listas: os botões da grade, os apps no ar e o status dos serviços.
+     2. Oferece a tela de ajuste (a engrenagem no topo), que edita os botões
+        da grade.
 
    A tela de ajuste mora aqui, e não no index.html, porque sem a ponte não
    haveria onde gravar as mudanças. */
@@ -24,8 +24,12 @@
     'grafite', 'chumbo', 'ardosia', 'pedra'                           // neutras
   ];
 
-  /* Cada seção declara quais campos mostra. O desenho da linha é um só,
-     parametrizado por isto — não existe um editor por lista. */
+  /* Uma seção só, desde que APPs e Extras saíram do painel. A estrutura de
+     lista continua porque o desenho da linha é parametrizado por ela — e é o
+     que permite repor um grupo sem reescrever o editor.
+
+     O `apps` e o `status` seguem no blocos.local.json: como não são enviados,
+     o servidor não os regrava (ele só substitui as chaves que chegam). */
   var SECOES = [
     {
       chave: 'blocos',
@@ -33,21 +37,6 @@
       icone: true, descricao: true, cor: true,
       novo: function () { return { nome: '', descricao: '', icone: '✦', cor: 'azul', acao: 'https://' }; }
     },
-    /* Os dois grupos de atalhos são idênticos em capacidade — o segundo já não
-       aceitou cor um dia. Os títulos aqui repetem os da página, para não
-       obrigar ninguém a adivinhar qual lista é qual. */
-    {
-      chave: 'apps',
-      titulo: 'APPs',
-      icone: false, descricao: false, cor: true,
-      novo: function () { return { nome: '', cor: 'azul', acao: 'https://' }; }
-    },
-    {
-      chave: 'status',
-      titulo: 'Extras',
-      icone: false, descricao: false, cor: true,
-      novo: function () { return { nome: '', cor: 'azul', acao: 'https://' }; }
-    }
   ];
 
   /* XMLHttpRequest e não `fetch`: o iPad que usa este painel roda iOS 9, cujo
@@ -150,8 +139,11 @@
 
   var estilo = document.createElement('style');
   estilo.textContent = [
-    '#ed-fundo{position:fixed;inset:0;z-index:9999;background:rgba(8,8,7,.86);',
-    '  display:none;overflow-y:auto;padding:32px 20px;',
+    '#ed-fundo{position:fixed;top:0;right:0;bottom:0;left:0;z-index:9999;',
+    '  background:rgba(8,8,7,.86);display:none;padding:32px 20px;',
+    /* overflow-y + rolagem por inércia: sem a segunda linha o iOS 9 trava o
+       conteúdo dentro de um elemento fixo e a lista não sobe. */
+    '  overflow-y:auto;-webkit-overflow-scrolling:touch;',
     "  font-family:'Inter',-apple-system,sans-serif;}",
     '#ed-fundo.aberto{display:block;}',
     '#ed-caixa{max-width:940px;margin:0 auto;background:#141412;',
@@ -162,14 +154,21 @@
     '#ed-fundo h3{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;',
     '  color:#8C8C7F;font-weight:700;margin:26px 0 10px;}',
     '#ed-fundo h3:first-child{margin-top:0;}',
-    '.ed-item{display:grid;grid-template-columns:34px 56px 1fr 34px;gap:10px;',
-    '  align-items:start;padding:14px;border:1px solid rgba(255,255,255,.09);',
+    '.ed-item{display:flex;align-items:flex-start;',
+    '  padding:14px;border:1px solid rgba(255,255,255,.09);',
     '  border-radius:13px;margin-bottom:10px;background:rgba(255,255,255,.023);}',
-    '.ed-item.sem-icone{grid-template-columns:34px 1fr 34px;}',
-    '.ed-ordem{display:flex;flex-direction:column;gap:4px;}',
+    '.ed-item > * + *{margin-left:10px;}',
+    '.ed-ordem{flex:0 0 34px;}',
+    '#ed-fundo input.icone{flex:0 0 56px;}',
+    '.ed-campos{flex:1 1 auto;min-width:0;}',
+    '.ed-excluir{flex:0 0 34px;}',
+    '.ed-ordem{display:flex;flex-direction:column;}',
+    '.ed-ordem button + button{margin-top:4px;}',
     '.ed-ordem button{width:34px;height:26px;}',
-    '.ed-campos{display:grid;grid-template-columns:1fr 1fr;gap:8px;}',
-    '.ed-campos .largo{grid-column:1 / -1;}',
+    '.ed-campos{display:flex;flex-wrap:wrap;}',
+    '#ed-fundo .ed-campos > *{width:calc(50% - 4px);margin:0 8px 8px 0;}',
+    '#ed-fundo .ed-campos > *:nth-child(2n){margin-right:0;}',
+    '#ed-fundo .ed-campos .largo{width:100%;margin-right:0;}',
     '#ed-fundo input{width:100%;box-sizing:border-box;background:#0E0E0C;',
     '  border:1px solid rgba(255,255,255,.14);border-radius:8px;color:#F2F1EC;',
     '  padding:9px 11px;font:inherit;font-size:14px;}',
@@ -185,12 +184,14 @@
        sem marcação nenhuma — foi exatamente o que aconteceu na primeira versão. */
     '#ed-fundo .ed-excluir{color:#EE9265;}',
     '#ed-fundo .ed-add{margin-top:2px;}',
-    '#ed-fundo .ed-cores{grid-column:1 / -1;display:flex;gap:7px;flex-wrap:wrap;margin-top:2px;}',
+    '#ed-fundo .ed-cores{width:100%;display:flex;flex-wrap:wrap;margin:2px 0 0;}',
+    '#ed-fundo .ed-cor{margin:0 7px 7px 0;}',
     '#ed-fundo .ed-cor{width:26px;height:26px;border-radius:50%;',
     '  border:2px solid rgba(255,255,255,.16);cursor:pointer;padding:0;}',
     '#ed-fundo .ed-cor[aria-pressed="true"]{border-color:#F2F1EC;',
     '  box-shadow:0 0 0 2px rgba(0,0,0,.55) inset;}',
-    '#ed-rodape{display:flex;align-items:center;gap:12px;margin-top:22px;',
+    '#ed-rodape{display:flex;align-items:center;margin-top:22px;',
+    '#ed-rodape > * + *{margin-left:12px;}',
     '  padding-top:18px;border-top:1px solid rgba(255,255,255,.09);}',
     '#ed-erro{flex:1;font-size:13.5px;color:#EE9265;}',
     '#ed-fundo #ed-salvar{background:#217361;border-color:#217361;',
@@ -205,7 +206,7 @@
   fundo.innerHTML =
     '<div id="ed-caixa">' +
       '<h2>Mapa dos botões</h2>' +
-      '<p class="sub">Os botões grandes da grade e os dois grupos de atalhos. Use as setas para reordenar e toque na cor para trocar.</p>' +
+      '<p class="sub">Use as setas para reordenar e toque na cor para trocar.</p>' +
       '<div id="ed-lista"></div>' +
       '<p id="ed-dica">O endereço começa com <code>https://</code>, ou é um marcador de ação no MacBook: <code>#claude-app</code> abre o app do Claude, <code>#claude-code</code> abre o Claude Code no Terminal.</p>' +
       '<div id="ed-rodape">' +

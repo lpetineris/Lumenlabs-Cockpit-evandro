@@ -176,7 +176,8 @@
     background:transparent;
     color:var(--text-on-dark);
     display:flex; align-items:center; justify-content:center;
-    font-size:22px; cursor:pointer;
+    font-size:22px; line-height:1; cursor:pointer;
+    padding:0;
     transition:background .12s ease, color .12s ease, transform .08s ease;
   }
   .fs-btn:active{background:rgba(255,255,255,.16); transform:scale(.94);}
@@ -197,9 +198,12 @@
   }
   .clima-linha{font-size:15px; color:var(--stone-on-dark); margin-top:2px; white-space:nowrap;}
 
-  .clock{text-align:right; min-width:245px;}
-  .clock-time{font-family:var(--display); font-size:26px; font-weight:700; letter-spacing:-0.02em; color:var(--text-on-dark); font-variant-numeric:tabular-nums;}
-  .clock-date{font-size:19px; color:var(--stone-on-dark); margin-top:2px;}
+  /* Data e hora lado a lado, data primeiro. Alinhadas pela linha de base para
+     que os dois tamanhos diferentes assentem no mesmo pé. */
+  .clock{display:flex; align-items:baseline; justify-content:flex-end;}
+  .clock > * + *{margin-left:16px;}
+  .clock-time{font-family:var(--display); font-size:40px; font-weight:700; letter-spacing:-0.02em; color:var(--text-on-dark); font-variant-numeric:tabular-nums;}
+  .clock-date{font-size:26px; color:var(--stone-on-dark); white-space:nowrap;}
   /* o avatar acompanha os dois botões: os três eram 44px e formavam um conjunto */
   .profile{
     width:54px; height:54px; border-radius:50%;
@@ -224,16 +228,11 @@
     height:calc(100% - 104px);
   }
   .main{
-    padding:40px 32px 40px 48px; overflow:hidden;
+    padding:40px 48px 40px 48px; overflow:hidden;
     display:flex; flex-direction:column;
     /* ocupa o que sobrar da largura; o min-width:0 impede que um bloco largo
        empurre a coluna lateral para fora da tela */
     flex:1 1 auto; min-width:0;
-  }
-  .side{
-    padding:40px 48px 40px 24px; border-left:1px solid var(--border-on-dark);
-    overflow:hidden;
-    flex:0 0 460px; width:460px;
   }
 
   /* ===== RETRATO =====
@@ -259,24 +258,12 @@
      48 de cada lado, sobram 984: cinco blocos de 176 mais 20 de margem cada um
      dão 980 e cabem com folga. Conta fechada em pixels justamente porque a
      largura do canvas nunca muda. */
+  /* Em pé os mesmos 300px dão 3 por linha: 3 x (300+20) = 960, dentro dos 984
+     que sobram dos 1080 do canvas menos os 48 de recuo de cada lado. */
   #canvas.retrato .launch-grid .tile{
-    width:176px;
-    height:176px;
+    width:300px;
+    height:300px;
   }
-  #canvas.retrato .side{
-    border-left:none;
-    border-top:1px solid var(--border-on-dark);
-    padding:32px 48px 40px 48px;
-    display:flex;
-    align-items:flex-start;   /* os cartões ficam com a altura do conteúdo */
-    flex:1 1 auto;
-    width:auto;
-  }
-  /* os dois cartões dividem a largura; o vão de 16px vira margem, por falta de
-     `gap` no Safari antigo */
-  #canvas.retrato .side > .card{ flex:1 1 0; min-width:0; margin:0 0 0 16px; }
-  #canvas.retrato .side > .card:first-child{ margin-left:0; }
-  #canvas.retrato .card{ margin-bottom:0; }
 
   /* Em pé a barra de cima tem 1080 de largura em vez de 1920, e o clima entrou
      nela. Sem estes cortes a marca quebrava em duas linhas e vazava dos 104px
@@ -286,6 +273,15 @@
   #canvas.retrato .brand-text{ font-size:28px; }
   #canvas.retrato .top-right > * + *{ margin-left:16px; }
   #canvas.retrato .clima-cidade{ display:none; }
+  /* Em pé sai também a linha de condição e máxima/mínima, ficando só o ícone e
+     a temperatura. Com o relógio maior, a barra de 1080 não comporta os dois
+     inteiros: medido, o conjunto passava de 826 numa tela de 768. O que sai é o
+     detalhe; o que fica é o que se lê de longe. */
+  #canvas.retrato .clima-linha{ display:none; }
+  /* Em pé fica "13 de agosto", sem o dia da semana: a data continua no tamanho
+     grande que se pede numa tela pequena, e a barra deixa de depender do
+     comprimento do nome do dia. */
+  #canvas.retrato .clock-semana{ display:none; }
 
   .section-title{
     font-family:var(--display); font-size:24px; font-weight:700; letter-spacing:-0.02em;
@@ -317,12 +313,12 @@
        no Safari 15. Dá para fixar em pixels porque o canvas tem largura
        constante (1920 deitado, 1080 em pé) e é o `transform: scale` que o
        ajusta à tela; nada aqui depende do tamanho real do aparelho. */
-    width:200px;
-    height:200px;
+    width:300px;
+    height:300px;
     flex:0 0 auto;
     margin:0 20px 20px 0;
-    border-radius:24px;
-    padding:24px;
+    border-radius:32px;
+    padding:32px;
     display:flex;
     flex-direction:column;
     justify-content:space-between;
@@ -340,14 +336,14 @@
     box-shadow:0 4px 14px -10px rgba(0,0,0,.3);
   }
   .tile-icon{
-    width:52px; height:52px; border-radius:16px;
+    width:74px; height:74px; border-radius:22px;
     background:rgba(255,255,255,.18);
     display:flex; align-items:center; justify-content:center;
-    font-size:24px;
+    font-size:34px;
     backdrop-filter:blur(4px);
   }
-  .tile-name{font-family:var(--display); font-size:19px; font-weight:700; letter-spacing:-0.01em;}
-  .tile-meta{font-size:12px; opacity:.85; margin-top:3px;}
+  .tile-name{font-family:var(--display); font-size:28px; font-weight:700; letter-spacing:-0.01em;}
+  .tile-meta{font-size:17px; opacity:.85; margin-top:5px;}
   /* seta = "abre em outra aba". Substitui as bolinhas de status do mockup,
      que davam a entender que a página sabia se o deploy estava no ar — ela não sabe. */
   .tile-arrow{
@@ -400,53 +396,12 @@
 
   .tile-badge{
     display:inline-block;
-    font-size:10px; font-weight:700; letter-spacing:.8px; text-transform:uppercase;
-    background:rgba(255,255,255,.2); padding:5px 10px; border-radius:20px;
+    font-size:14px; font-weight:700; letter-spacing:.8px; text-transform:uppercase;
+    background:rgba(255,255,255,.2); padding:7px 14px; border-radius:20px;
   }
 
   /* ===== SIDE PANEL ===== */
-  .card{
-    background:white;
-    border:1px solid var(--border);
-    border-radius:20px;
-    padding:20px 22px;
-    margin-bottom:14px;
-  }
-  .card-title{
-    font-family:var(--display); font-weight:700; font-size:14px; color:var(--dark);
-    margin-bottom:12px;
-  }
 
-  /* Os atalhos eram linhas de tabela: alvo de 42px de altura e largura inteira,
-     ruim de acertar com o dedo. Viraram quadrados de 100px — 200 pixels físicos
-     na tela 4K — reaproveitando as mesmas classes de cor dos blocos grandes. */
-  .atalho-grade{
-    display:flex;
-    flex-wrap:wrap;
-  }
-  .atalho{
-    width:100px;
-    height:100px;      /* quadrado sem `aspect-ratio`, igual aos blocos grandes */
-    flex:0 0 auto;
-    margin:0 12px 12px 0;
-    border-radius:16px;
-    padding:12px;
-    display:flex;
-    flex-direction:column;
-    justify-content:flex-end;
-    position:relative;
-    overflow:hidden;
-    color:white;
-    cursor:pointer;
-    box-shadow:0 4px 12px -8px rgba(0,0,0,.35);
-    transition:transform .1s ease, filter .1s ease;
-  }
-  .atalho:active{transform:scale(.95); filter:brightness(1.14);}
-  .atalho-nome{
-    font-family:var(--display);
-    font-size:13px; font-weight:700; line-height:1.22; letter-spacing:-0.01em;
-  }
-  .atalho-seta{position:absolute; top:10px; right:12px; font-size:13px; line-height:1; opacity:.6;}
 
 </style>
 </head>
@@ -479,34 +434,24 @@
           <div class="clima-linha" id="climaLinha"></div>
         </div>
       </div>
+      <!-- data antes da hora: as duas na mesma linha, com a data à esquerda -->
       <div class="clock">
-        <div class="clock-time" id="clockTime">--:--</div>
         <div class="clock-date" id="clockDate">&nbsp;</div>
+        <div class="clock-time" id="clockTime">--:--</div>
       </div>
-      <div class="profile">LP</div>
+      <div class="profile">EM</div>
     </div>
   </div>
 
+  <!-- Só a grade. Os grupos APPs e Extras saíram: nesta tela de 9,7 polegadas
+       eles roubavam largura dos botões grandes, que são o que se usa de fato.
+       O que estava neles continua gravado no blocos.local.json e volta a
+       aparecer se um dia esta coluna for reposta. -->
   <div class="layout">
     <div class="main">
       <div class="section-title">Web</div>
 
       <div class="launch-grid" id="grade"></div>
-    </div>
-
-    <div class="side">
-      <!-- Os dois grupos continuam iguais em capacidade: os títulos aqui são
-           rótulos de uso, não uma diferença de comportamento. -->
-      <div class="card">
-        <div class="card-title">APPs</div>
-        <div class="atalho-grade" id="listaApps"></div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Extras</div>
-        <div class="atalho-grade" id="listaStatus"></div>
-      </div>
-
     </div>
   </div>
 
@@ -547,18 +492,6 @@
     return a;
   }
 
-  /* Os atalhos usam as mesmas classes de cor dos blocos grandes (.t-laranja e
-     companhia), então a paleta vale para os dois sem duplicar nada. Os dois
-     grupos são iguais: quem não tiver cor gravada cai na mesma padrão. */
-  function montarAtalho(item){
-    var a = elemento('a', 'atalho t-' + (item.cor || 'pedra'));
-    a.href = item.acao;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    a.appendChild(elemento('span', 'atalho-seta', '↗'));
-    a.appendChild(elemento('span', 'atalho-nome', item.nome));
-    return a;
-  }
 
   function desenhar(config){
     CONFIG = config;
@@ -567,13 +500,9 @@
     grade.textContent = '';
     (config.blocos || []).forEach(function(b){ grade.appendChild(montarBloco(b)); });
 
-    var apps = document.getElementById('listaApps');
-    apps.textContent = '';
-    (config.apps || []).forEach(function(i){ apps.appendChild(montarAtalho(i)); });
-
-    var status = document.getElementById('listaStatus');
-    status.textContent = '';
-    (config.status || []).forEach(function(i){ status.appendChild(montarAtalho(i)); });
+    /* `apps` e `status` continuam no arquivo de configuração, intocados — só não
+       têm mais onde aparecer. A ponte também não os regrava, então nada se perde
+       se a coluna voltar um dia. */
 
     document.dispatchEvent(new CustomEvent('cockpit:desenhado'));
   }
@@ -658,9 +587,19 @@
     var d = new Date();
     elTime.textContent = d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
     /* "segunda-feira, 10 de agosto" → só a primeira letra em maiúscula.
-       O capitalize do CSS deixaria "10 De Agosto". */
-    var data = d.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'});
-    elDate.textContent = data.charAt(0).toUpperCase() + data.slice(1);
+       O capitalize do CSS deixaria "10 De Agosto".
+
+       O dia da semana vai num elemento próprio para o CSS poder escondê-lo em
+       pé, onde a barra tem 1080 e não 1920. Sem isso o cabeçalho transbordava
+       nas datas mais longas: "Segunda-feira, 28 de fevereiro" é 4 caracteres
+       maior que a de hoje, e a folga medida já era zero. */
+    var semana = d.toLocaleDateString('pt-BR', {weekday:'long'});
+    var resto  = d.toLocaleDateString('pt-BR', {day:'numeric', month:'long'});
+    elDate.textContent = '';
+    var elSemana = elemento('span', 'clock-semana',
+      semana.charAt(0).toUpperCase() + semana.slice(1) + ', ');
+    elDate.appendChild(elSemana);
+    elDate.appendChild(document.createTextNode(resto));
   }
   tick();
   setInterval(tick, 15000);
