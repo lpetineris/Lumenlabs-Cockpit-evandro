@@ -160,9 +160,28 @@ Confirme que os dois estão na mesma rede Wi-Fi. Muita casa tem duas redes (uma
 normal e uma "5G") — precisam ser a mesma. Confirme também que o Mac está
 ligado e acordado: se o Mac dorme, o painel some.
 
-**Aparece "não é possível conectar".**
-Você provavelmente digitou o endereço sem o `http://` na frente, ou esqueceu o
-`:8787` no fim. Os dois são obrigatórios.
+**Aparece "não é possível conectar ao servidor".**
+Rode o `Verificar.command` e olhe o **item 4**. Ele testa se o Mac aceita
+conexões vindas da rede, e não só de si mesmo — que é a diferença entre o
+painel estar quebrado e o iPad não conseguir chegar até ele.
+
+As três causas, em ordem de frequência:
+
+1. **O firewall do macOS.** Se o item 4 falhar e o item 3 passar, é ele. Numa
+   máquina com o firewall ligado o macOS pergunta uma vez se o `python3` pode
+   aceitar conexões — e quem nunca viu a pergunta (porque o painel sobe sozinho
+   no login, sem ninguém na frente da tela) fica com o painel funcionando no Mac
+   e invisível para o iPad. Conserto: Ajustes do Sistema → Rede → Firewall →
+   Opções, e permita entrada para `python3`.
+2. **Redes diferentes.** O item 7 mostra em qual o Mac está. Muita casa tem duas
+   (uma normal e uma "5G", ou o repetidor criando uma faixa própria), e o nome
+   `.local` não atravessa de uma para a outra. Mac no cabo e iPad no Wi-Fi
+   costuma dar certo — desde que seja o mesmo roteador.
+3. **O endereço.** Sem o `http://` na frente ou sem o `:8787` no fim não
+   funciona. Os dois são obrigatórios.
+
+O item 6 mostra um endereço por IP, só para testar. Se o `.local` não abrir e o
+IP abrir, o problema é a descoberta de nome na rede, não a conexão.
 
 **Funcionava e parou.**
 Reinicie o Mac. O painel sobe sozinho no login.
