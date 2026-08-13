@@ -10,10 +10,17 @@
 <link rel="apple-touch-icon" href="/icon-192.png">
 <link rel="manifest" href="/manifest.webmanifest">
 <!-- O iPad ignora o webmanifest ao "Adicionar à Tela de Início": quem decide se o
-     painel abre sem a barra do Safari são estas duas linhas. Sem elas o atalho
-     abre dentro do navegador, com a barra de endereço comendo o topo da tela. -->
+     painel abre sem a barra do Safari são estas linhas. Sem elas o atalho abre
+     dentro do navegador, com a barra de endereço comendo o topo da tela.
+
+     `black` e não `black-translucent`: com translúcido o iOS desenha a barra de
+     status POR CIMA da página, e como o cabeçalho começa no pixel zero ela
+     cobria metade dele — o relógio, o clima e a engrenagem ficavam atrás da
+     hora e da bateria do iPad. Com `black` a página começa abaixo da barra.
+     O recuo de segurança no CSS lá embaixo cobre o caso de algum iPadOS
+     insistir em sobrepor mesmo assim. -->
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Cockpit">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -80,6 +87,12 @@
     -webkit-user-select:none;
     user-select:none;
     cursor:default;
+    /* Rede de segurança para o app na Tela de Início do iPad: se o iOS resolver
+       desenhar a barra de status por cima da página, este recuo empurra o
+       painel para baixo dela. Em navegador comum, e sempre que a barra não
+       sobrepõe, o valor é 0 e nada muda. O JS do canvas desconta esta altura
+       para o painel não passar do fim da tela. */
+    padding-top:env(safe-area-inset-top, 0px);
   }
   #canvas{
     background:var(--canvas-bg);
@@ -542,9 +555,14 @@
     var retrato = window.innerHeight > window.innerWidth;
     var base = retrato ? 1080 : 1920;
     var s = window.innerWidth / base;
+    /* O recuo da barra de status do iPad (veja o padding no body). Quase sempre
+       é 0; quando não é, esses pixels já foram gastos empurrando o painel para
+       baixo, então precisam sair da altura — senão o pé do painel passaria do
+       fim da tela pela mesma medida. */
+    var recuo = parseFloat(getComputedStyle(document.body).paddingTop) || 0;
     canvas.classList.toggle('retrato', retrato);
     canvas.style.width  = base + 'px';
-    canvas.style.height = (window.innerHeight / s) + 'px';
+    canvas.style.height = ((window.innerHeight - recuo) / s) + 'px';
     canvas.style.transform = 'scale(' + s + ')';
   }
   window.addEventListener('resize', fitCanvas);
