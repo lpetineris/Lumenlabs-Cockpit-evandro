@@ -98,10 +98,22 @@
     background:var(--canvas-bg);
     font-family:var(--sans);
     color:var(--text-on-dark);
+    /* Fixo, e não relativo, por causa do Safari do iPad.
+       O canvas mede 1920px de largura no layout — o `transform: scale()` abaixo
+       encolhe o desenho, nunca a caixa. Num navegador de mesa o
+       `overflow:hidden` do body corta essa sobra e ninguém percebe; o iOS, em
+       vez de cortar, estica a viewport até caber os 1920px. A partir daí
+       `window.innerWidth` devolve 1920 em vez da largura real do iPad, a conta
+       da escala dá 1, e o painel é desenhado em tamanho cheio vazando pela
+       direita — nas duas orientações, porque `innerWidth > innerHeight` também
+       impede o modo retrato de ligar.
+       Fora do fluxo, a caixa não tem como esticar viewport nenhuma. */
+    position:fixed;
+    top:0;
+    left:0;
     width:1920px;
     height:1080px;
     overflow:hidden;
-    position:relative;
     transform-origin:top left;
   }
   a{text-decoration:none; color:inherit;}
