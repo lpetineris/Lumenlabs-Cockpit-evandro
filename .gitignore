@@ -1,0 +1,8 @@
+.DS_Store
+.claude/
+blocos.json.bak*
+blocos.json.tmp
+
+# A configuração é de cada máquina, junto com as cópias de segurança que a
+# ponte guarda. O repositório versiona só o blocos.json, que é o modelo.
+blocos.local.json*

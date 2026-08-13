@@ -1,0 +1,99 @@
+{
+  "clima": {
+    "nome": "São Paulo",
+    "lat": -23.5505,
+    "lon": -46.6333
+  },
+  "blocos": [
+    {
+      "nome": "Gmail",
+      "acao": "https://mail.google.com",
+      "cor": "vermelho",
+      "descricao": "E-mail",
+      "icone": "✉"
+    },
+    {
+      "nome": "Agenda",
+      "acao": "https://calendar.google.com",
+      "cor": "azul",
+      "descricao": "Google Agenda",
+      "icone": "▦"
+    },
+    {
+      "nome": "Drive",
+      "acao": "https://drive.google.com",
+      "cor": "ambar",
+      "descricao": "Arquivos na nuvem",
+      "icone": "◆"
+    },
+    {
+      "nome": "WhatsApp",
+      "acao": "https://web.whatsapp.com",
+      "cor": "lima",
+      "descricao": "WhatsApp Web",
+      "icone": "✦"
+    },
+    {
+      "nome": "YouTube",
+      "acao": "https://www.youtube.com",
+      "cor": "coral",
+      "descricao": "",
+      "icone": "▶"
+    },
+    {
+      "nome": "Maps",
+      "acao": "https://www.google.com/maps",
+      "cor": "verde",
+      "descricao": "Mapas e trânsito",
+      "icone": "◈"
+    },
+    {
+      "nome": "Notas",
+      "acao": "https://keep.google.com",
+      "cor": "violeta",
+      "descricao": "Google Keep",
+      "icone": "✎"
+    },
+    {
+      "nome": "ChatGPT",
+      "acao": "https://chatgpt.com",
+      "cor": "grafite",
+      "descricao": "",
+      "icone": "✦"
+    }
+  ],
+  "apps": [
+    {
+      "nome": "Google",
+      "acao": "https://www.google.com",
+      "cor": "pedra"
+    },
+    {
+      "nome": "Fotos",
+      "acao": "https://photos.google.com",
+      "cor": "turquesa"
+    },
+    {
+      "nome": "Tradutor",
+      "acao": "https://translate.google.com",
+      "cor": "anil"
+    }
+  ],
+  "status": [
+    {
+      "nome": "Instagram",
+      "acao": "https://www.instagram.com",
+      "cor": "magenta"
+    },
+    {
+      "nome": "Netflix",
+      "acao": "https://www.netflix.com",
+      "cor": "vinho"
+    },
+    {
+      "nome": "Spotify",
+      "acao": "https://open.spotify.com",
+      "cor": "musgo"
+    }
+  ]
+}

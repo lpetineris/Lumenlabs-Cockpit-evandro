@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Lumen Cockpit</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0E0E0C">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<!-- O iPad ignora o webmanifest ao "Adicionar à Tela de Início": quem decide se o
+     painel abre sem a barra do Safari são estas duas linhas. Sem elas o atalho
+     abre dentro do navegador, com a barra de endereço comendo o topo da tela. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cockpit">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F8F7F4;
+    --dark:#1A1A1A;
+    --stone:#6B6B5E;
+    --stone-soft:#9B9B8E;
+    --border:#E5E5E0;
+    --orange:#FF6B35;
+    --orange-soft:#FF8F5E;
+    --green:#52B788;
+    --green-soft:#74C69D;
+    --blue:#4361EE;
+    --blue-soft:#6B7FFF;
+    --white:#FFFFFF;
+    --canvas-bg:#0E0E0C;
+    --text-on-dark:#F2F1EC;
+    --stone-on-dark:#8C8C7F;
+    --border-on-dark:rgba(255,255,255,.08);
+    --lumen-teal:#217361;
+    --lumen-orange:#E97849;
+    --lumen-off:#FAFAFA;
+
+    --sans:'Inter','Helvetica Neue',Arial,sans-serif;
+    --display:'Plus Jakarta Sans','Inter','Helvetica Neue',Arial,sans-serif;
+
+    /* as mesmas cores dos blocos, em versão sólida, para as bolinhas do painel */
+    --cor-vermelho:#DC2626;
+    --cor-amarelo:#EAB308;
+    --cor-azul:#2563EB;
+    --cor-laranja:#EA580C;
+    --cor-verde:#16A34A;
+    --cor-violeta:#7C3AED;
+    --cor-coral:#EA4E24;
+    --cor-ambar:#D97706;
+    --cor-lima:#58900E;
+    --cor-turquesa:#0D9488;
+    --cor-anil:#4F46E5;
+    --cor-magenta:#C026D3;
+    --cor-vinho:#A81845;
+    --cor-terra:#92400E;
+    --cor-musgo:#4D7C0F;
+    --cor-marinho:#1E40AF;
+    --cor-grafite:#3A3A36;
+    --cor-chumbo:#484848;
+    --cor-ardosia:#526074;
+    --cor-pedra:#6B6B5E;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{
+    background:var(--canvas-bg);
+    overflow:hidden;
+    height:100%;
+    width:100%;
+  }
+  /* touchscreen: sem atraso de clique, sem realce azul, sem seleção acidental de texto */
+  body{
+    touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent;
+    overscroll-behavior:none;
+    -webkit-user-select:none;
+    user-select:none;
+    cursor:default;
+  }
+  #canvas{
+    background:var(--canvas-bg);
+    font-family:var(--sans);
+    color:var(--text-on-dark);
+    width:1920px;
+    height:1080px;
+    overflow:hidden;
+    position:relative;
+    transform-origin:top left;
+  }
+  a{text-decoration:none; color:inherit;}
+
+  /* ambient circular graphic, echoing the Lumen mark */
+  .orb{
+    position:absolute;
+    border-radius:50%;
+    pointer-events:none;
+  }
+  .orb-1{width:640px;height:640px; background:radial-gradient(circle at 30% 30%, rgba(67,97,238,.10), transparent 70%); top:-220px; right:-160px;}
+  .orb-2{width:480px;height:480px; background:radial-gradient(circle at 30% 30%, rgba(255,107,53,.08), transparent 70%); bottom:-180px; left:220px;}
+
+  /* ===== TOP BAR ===== */
+  .topbar{
+    position:relative;
+    z-index:2;
+    height:104px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 48px;
+    border-bottom:1px solid var(--border-on-dark);
+  }
+  .brand{display:flex; align-items:center; gap:24px;}
+  .brand-mark{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    height:50px;
+  }
+  .brand-mark .bar{
+    width:11px;
+    border-radius:8px;
+  }
+  .brand-mark .b1{height:29px; background:var(--lumen-teal);}
+  .brand-mark .b2{height:50px; background:var(--lumen-orange);}
+  .brand-mark .b3{height:38px; background:var(--lumen-teal);}
+  .brand-mark .b4{height:26px; background:var(--lumen-off);}
+  .brand-mark .b5{height:21px; background:var(--lumen-orange); opacity:.85;}
+  .brand-text{font-family:var(--display); font-weight:700; font-size:32px; letter-spacing:-0.02em; color:var(--text-on-dark);}
+  .brand-text span{color:var(--lumen-orange);}
+  .brand-sub{font-size:14px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--stone-on-dark); margin-top:3px;}
+
+  .top-right{display:flex; align-items:center; gap:24px;}
+  /* Botão de tela cheia, para o painel aberto no navegador do Mac.
+     No iPad ele não aparece: o Safari não tem a API de tela cheia, e lá quem
+     resolve isso é o atalho na Tela de Início. O JS lá embaixo o esconde. */
+  /* Borda branca de propósito: com a borda quase invisível de antes, os dois
+     botões pareciam menores do que são. O símbolo também clareia junto. */
+  .fs-btn{
+    width:54px; height:54px; border-radius:17px;
+    border:2px solid var(--text-on-dark);
+    background:transparent;
+    color:var(--text-on-dark);
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; cursor:pointer;
+    transition:background .12s ease, color .12s ease, transform .08s ease;
+  }
+  .fs-btn:active{background:rgba(255,255,255,.16); transform:scale(.94);}
+  /* Precisa vir depois do display:flex acima, senão o atributo `hidden` que o
+     JS põe no iPad não teria efeito nenhum. */
+  .fs-btn[hidden]{display:none;}
+  /* ===== CLIMA =====
+     Fica escondido até a primeira resposta chegar: um painel com "--°" parado
+     no alto é pior do que um painel sem clima. Se a consulta falhar, some. */
+  .clima{display:flex; align-items:center; gap:12px;}
+  .clima[hidden]{display:none;}
+  .clima-icone{font-size:34px; line-height:1;}
+  .clima-temp{
+    font-family:var(--display); font-size:26px; font-weight:700;
+    letter-spacing:-0.02em; color:var(--text-on-dark);
+    font-variant-numeric:tabular-nums;
+  }
+  .clima-linha{font-size:15px; color:var(--stone-on-dark); margin-top:2px; white-space:nowrap;}
+
+  .clock{text-align:right; min-width:245px;}
+  .clock-time{font-family:var(--display); font-size:26px; font-weight:700; letter-spacing:-0.02em; color:var(--text-on-dark); font-variant-numeric:tabular-nums;}
+  .clock-date{font-size:19px; color:var(--stone-on-dark); margin-top:2px;}
+  /* o avatar acompanha os dois botões: os três eram 44px e formavam um conjunto */
+  .profile{
+    width:54px; height:54px; border-radius:50%;
+    background:linear-gradient(135deg,var(--blue),var(--blue-soft));
+    display:flex; align-items:center; justify-content:center;
+    color:white; font-weight:700; font-family:var(--display); font-size:18px;
+  }
+
+  /* ===== LAYOUT ===== */
+  .layout{
+    position:relative; z-index:2;
+    display:grid;
+    grid-template-columns:1fr 460px;
+    /* a altura do canvas é definida pelo JS conforme a janela, então aqui é
+       proporção e não um número fixo — do contrário sobrariam faixas pretas
+       em qualquer tela que não fosse 16:9. */
+    height:calc(100% - 104px);
+  }
+  .main{ padding:40px 32px 40px 48px; overflow:hidden; display:flex; flex-direction:column; }
+  .side{ padding:40px 48px 40px 24px; border-left:1px solid var(--border-on-dark); overflow:hidden; }
+
+  /* ===== RETRATO =====
+     O iPad às vezes é usado em pé. A coluna lateral desce para baixo da
+     grade, e os dois cartões passam a dividir a largura em vez de empilhar. */
+  #canvas.retrato .layout{
+    grid-template-columns:1fr;
+    /* Grade e atalhos ficam com a altura natural, um debaixo do outro, e a
+       sobra cai no fim da tela. Esticar a grade jogaria os atalhos para a
+       borda de baixo e abriria um vão preto no meio da página — pior do que
+       a sobra ficar toda numa ponta só. */
+    grid-template-rows:auto 1fr;
+  }
+  #canvas.retrato .main{ padding:40px 48px 12px 48px; }
+  /* Em pé as colunas dividem a largura em vez de serem 200px fixos. São 5:
+     com 3 os blocos ficavam grandes demais para o pouco que cada um mostra.
+     A grade fica ancorada no topo e a faixa de atalhos embaixo, então a sobra
+     de altura cai entre as duas — separando as seções, em vez de virar uma
+     borda preta numa das pontas. */
+  #canvas.retrato .launch-grid{
+    grid-template-columns:repeat(5, 1fr);
+  }
+  #canvas.retrato .side{
+    border-left:none;
+    border-top:1px solid var(--border-on-dark);
+    padding:32px 48px 40px 48px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+    align-content:start;
+  }
+  #canvas.retrato .card{ margin-bottom:0; }
+
+  /* Em pé a barra de cima tem 1080 de largura em vez de 1920, e o clima entrou
+     nela. Sem estes cortes a marca quebrava em duas linhas e vazava dos 104px
+     de altura. Sai o subtítulo, que é decorativo, e a cidade do clima, que já
+     está implícita — ficam o ícone, a temperatura e a máxima/mínima. */
+  #canvas.retrato .brand-sub{ display:none; }
+  #canvas.retrato .brand-text{ font-size:28px; }
+  #canvas.retrato .top-right{ gap:16px; }
+  #canvas.retrato .clima-cidade{ display:none; }
+
+  .section-title{
+    font-family:var(--display); font-size:24px; font-weight:700; letter-spacing:-0.02em;
+    margin-bottom:24px;
+    color:var(--text-on-dark);
+  }
+
+  /* ===== LAUNCH GRID ===== */
+  .launch-grid{
+    display:grid;
+    /* colunas fixas de 200px: entram quantas couberem na largura disponível,
+       em vez de esticar para preencher. */
+    grid-template-columns:repeat(auto-fill, 200px);
+    gap:20px;
+    /* Os blocos são quadrados (ver aspect-ratio abaixo), então as linhas têm a
+       altura natural deles e ficam ancoradas no topo em vez de esticar. */
+    align-content:start;
+    flex:1;
+    min-height:0;
+    /* se um dia houver blocos demais para caber, rola em vez de cortar */
+    overflow-y:auto;
+    scrollbar-width:thin;
+    scrollbar-color:rgba(255,255,255,.16) transparent;
+  }
+  .launch-grid::-webkit-scrollbar{width:8px;}
+  .launch-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16); border-radius:8px;}
+  .launch-grid::-webkit-scrollbar-track{background:transparent;}
+  .tile{
+    /* quadrado: a altura acompanha a largura da coluna */
+    aspect-ratio:1 / 1;
+    border-radius:24px;
+    padding:24px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    position:relative;
+    overflow:hidden;
+    color:white;
+    box-shadow:0 8px 24px -12px rgba(0,0,0,.18);
+    transition:transform .1s ease, box-shadow .1s ease, filter .1s ease;
+  }
+  /* feedback tátil: numa tela de toque não existe hover, então o retorno é no toque */
+  a.tile{cursor:pointer;}
+  a.tile:active{
+    transform:scale(.97);
+    filter:brightness(1.12);
+    box-shadow:0 4px 14px -10px rgba(0,0,0,.3);
+  }
+  .tile-icon{
+    width:52px; height:52px; border-radius:16px;
+    background:rgba(255,255,255,.18);
+    display:flex; align-items:center; justify-content:center;
+    font-size:24px;
+    backdrop-filter:blur(4px);
+  }
+  .tile-name{font-family:var(--display); font-size:19px; font-weight:700; letter-spacing:-0.01em;}
+  .tile-meta{font-size:12px; opacity:.85; margin-top:3px;}
+  /* seta = "abre em outra aba". Substitui as bolinhas de status do mockup,
+     que davam a entender que a página sabia se o deploy estava no ar — ela não sabe. */
+  .tile-arrow{
+    position:absolute; top:22px; right:24px;
+    font-size:17px; line-height:1; opacity:.55;
+  }
+
+  /* ===== PALETA — círculo cromático de 12 raios + profundas + neutras =====
+     A ordem aqui é a mesma da tela de ajuste. Cores vizinhas no círculo se
+     parecem por definição: é o espaçamento regular de 30° que dá a estrutura,
+     não a distância entre elas. */
+
+  /* Primárias */
+  .t-vermelho{background:linear-gradient(145deg,#DC2626,#EF4444);}
+  .t-amarelo {background:linear-gradient(145deg,#EAB308,#FACC15);}
+  .t-azul    {background:linear-gradient(145deg,#2563EB,#3B82F6);}
+
+  /* Secundárias */
+  .t-laranja {background:linear-gradient(145deg,#EA580C,#F97316);}
+  .t-verde   {background:linear-gradient(145deg,#16A34A,#22C55E);}
+  .t-violeta {background:linear-gradient(145deg,#7C3AED,#9B5DF5);}
+
+  /* Terciárias — cada uma entre duas das anteriores */
+  .t-coral   {background:linear-gradient(145deg,#EA4E24,#F97350);} /* vermelho-laranja */
+  .t-ambar   {background:linear-gradient(145deg,#D97706,#F59E0B);} /* amarelo-laranja  */
+  .t-lima    {background:linear-gradient(145deg,#4D7C0F,#65A30D);} /* amarelo-verde    */
+  .t-turquesa{background:linear-gradient(145deg,#0D9488,#14B8A6);} /* azul-verde       */
+  .t-anil    {background:linear-gradient(145deg,#4F46E5,#6366F1);} /* azul-violeta     */
+  .t-magenta {background:linear-gradient(145deg,#C026D3,#D946EF);} /* vermelho-violeta */
+
+  /* Profundas — a mesma volta do círculo, em versão escura */
+  .t-vinho   {background:linear-gradient(145deg,#881337,#A81845);}
+  .t-terra   {background:linear-gradient(145deg,#78350F,#92400E);}
+  .t-musgo   {background:linear-gradient(145deg,#365314,#4D7C0F);}
+  .t-marinho {background:linear-gradient(145deg,#1E3A8A,#1E40AF);}
+
+  /* Neutras */
+  .t-grafite {background:linear-gradient(145deg,#1A1A1A,#3A3A36);}
+  .t-chumbo  {background:linear-gradient(145deg,#2b2b2b,#484848);}
+  .t-ardosia {background:linear-gradient(145deg,#475569,#64748B);}
+  .t-pedra   {background:linear-gradient(145deg,#6B6B5E,#8A8A7A);}
+
+  /* O amarelo é claro demais para texto branco. Em vez de escurecê-lo até
+     virar mostarda — perdendo justamente a cor básica que faltava — ele
+     inverte o texto. É a única exceção da paleta. */
+  .t-amarelo{color:#1A1A18;}
+  .t-amarelo .tile-icon{background:rgba(0,0,0,.15);}
+  .t-amarelo .tile-badge{background:rgba(0,0,0,.18);}
+  .t-amarelo .tile-arrow{opacity:.5;}
+
+  .tile-badge{
+    display:inline-block;
+    font-size:10px; font-weight:700; letter-spacing:.8px; text-transform:uppercase;
+    background:rgba(255,255,255,.2); padding:5px 10px; border-radius:20px;
+  }
+
+  /* ===== SIDE PANEL ===== */
+  .card{
+    background:white;
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:20px 22px;
+    margin-bottom:14px;
+  }
+  .card-title{
+    font-family:var(--display); font-weight:700; font-size:14px; color:var(--dark);
+    margin-bottom:12px;
+  }
+
+  /* Os atalhos eram linhas de tabela: alvo de 42px de altura e largura inteira,
+     ruim de acertar com o dedo. Viraram quadrados de 100px — 200 pixels físicos
+     na tela 4K — reaproveitando as mesmas classes de cor dos blocos grandes. */
+  .atalho-grade{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, 100px);
+    justify-content:space-between;
+    gap:12px;
+  }
+  .atalho{
+    width:100px;
+    aspect-ratio:1 / 1;
+    border-radius:16px;
+    padding:12px;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    position:relative;
+    overflow:hidden;
+    color:white;
+    cursor:pointer;
+    box-shadow:0 4px 12px -8px rgba(0,0,0,.35);
+    transition:transform .1s ease, filter .1s ease;
+  }
+  .atalho:active{transform:scale(.95); filter:brightness(1.14);}
+  .atalho-nome{
+    font-family:var(--display);
+    font-size:13px; font-weight:700; line-height:1.22; letter-spacing:-0.01em;
+  }
+  .atalho-seta{position:absolute; top:10px; right:12px; font-size:13px; line-height:1; opacity:.6;}
+
+</style>
+</head>
+<body>
+<div id="canvas">
+
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">
+        <div class="bar b1"></div>
+        <div class="bar b2"></div>
+        <div class="bar b3"></div>
+        <div class="bar b4"></div>
+        <div class="bar b5"></div>
+      </div>
+      <div>
+        <div class="brand-text">Lumen <span>Cockpit</span></div>
+        <div class="brand-sub">Painel de comando — Lumen Labs</div>
+      </div>
+    </div>
+    <div class="top-right">
+      <button class="fs-btn" id="fsBtn" type="button" title="Tela cheia" aria-label="Alternar tela cheia">⛶</button>
+      <div class="clima" id="clima" hidden>
+        <div class="clima-icone" id="climaIcone"></div>
+        <div>
+          <div class="clima-temp" id="climaTemp"></div>
+          <div class="clima-linha" id="climaLinha"></div>
+        </div>
+      </div>
+      <div class="clock">
+        <div class="clock-time" id="clockTime">--:--</div>
+        <div class="clock-date" id="clockDate">&nbsp;</div>
+      </div>
+      <div class="profile">LP</div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="main">
+      <div class="section-title">Web</div>
+
+      <div class="launch-grid" id="grade"></div>
+    </div>
+
+    <div class="side">
+      <!-- Os dois grupos continuam iguais em capacidade: os títulos aqui são
+           rótulos de uso, não uma diferença de comportamento. -->
+      <div class="card">
+        <div class="card-title">APPs</div>
+        <div class="atalho-grade" id="listaApps"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Extras</div>
+        <div class="atalho-grade" id="listaStatus"></div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  /* ── Montagem da página a partir de blocos.json ──
+     Os botões não estão escritos aqui dentro: vêm do arquivo de configuração,
+     que é o mesmo que a tela de ajuste grava e o que a ponte usa para saber
+     quais endereços pode abrir. Uma fonte só. */
+  var CONFIG = null;
+
+  function elemento(tag, classe, texto){
+    var el = document.createElement(tag);
+    if (classe) el.className = classe;
+    if (texto != null) el.textContent = texto;
+    return el;
+  }
+
+  function montarBloco(bloco){
+    var externo = (bloco.acao || '').indexOf('http') === 0;
+    var a = elemento('a', 'tile t-' + (bloco.cor || 'grafite'));
+    a.href = bloco.acao || '#';
+    if (externo) { a.target = '_blank'; a.rel = 'noopener noreferrer'; }
+
+    a.appendChild(elemento('div', 'tile-arrow', externo ? '↗' : '⌘'));
+    a.appendChild(elemento('div', 'tile-icon', bloco.icone || '•'));
+
+    var base = document.createElement('div');
+    if (bloco.selo) {
+      var selo = elemento('div', 'tile-badge', bloco.selo);
+      selo.style.marginBottom = '10px';
+      base.appendChild(selo);
+    }
+    base.appendChild(elemento('div', 'tile-name', bloco.nome || ''));
+    base.appendChild(elemento('div', 'tile-meta', bloco.descricao || ''));
+    a.appendChild(base);
+    return a;
+  }
+
+  /* Os atalhos usam as mesmas classes de cor dos blocos grandes (.t-laranja e
+     companhia), então a paleta vale para os dois sem duplicar nada. Os dois
+     grupos são iguais: quem não tiver cor gravada cai na mesma padrão. */
+  function montarAtalho(item){
+    var a = elemento('a', 'atalho t-' + (item.cor || 'pedra'));
+    a.href = item.acao;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.appendChild(elemento('span', 'atalho-seta', '↗'));
+    a.appendChild(elemento('span', 'atalho-nome', item.nome));
+    return a;
+  }
+
+  function desenhar(config){
+    CONFIG = config;
+
+    var grade = document.getElementById('grade');
+    grade.textContent = '';
+    (config.blocos || []).forEach(function(b){ grade.appendChild(montarBloco(b)); });
+
+    var apps = document.getElementById('listaApps');
+    apps.textContent = '';
+    (config.apps || []).forEach(function(i){ apps.appendChild(montarAtalho(i)); });
+
+    var status = document.getElementById('listaStatus');
+    status.textContent = '';
+    (config.status || []).forEach(function(i){ status.appendChild(montarAtalho(i)); });
+
+    document.dispatchEvent(new CustomEvent('cockpit:desenhado'));
+  }
+
+  function carregar(){
+    return fetch('blocos.json', {cache: 'no-store'})
+      .then(function(r){ return r.json(); })
+      .then(desenhar)
+      .catch(function(){
+        document.getElementById('grade').appendChild(
+          elemento('div', 'tile t-grafite', 'Não consegui ler o blocos.json'));
+      });
+  }
+  carregar();
+
+  /* ── Canvas escalável ──
+     A página é desenhada numa largura fixa e ampliada até preencher a tela.
+     Deitado essa largura é 1920: numa tela 4K (3840x2160) a escala é exatamente
+     2x, então tudo fica nítido e os blocos ficam com o dobro do tamanho físico
+     — bons de tocar com o dedo. Em pé a largura base passa a 1080 e o layout
+     empilha, porque o iPad às vezes é girado.
+
+     A altura acompanha a janela em vez de ser fixa. Antes o canvas era 1080 de
+     altura e a escala pegava o menor dos dois lados, o que deixava faixas
+     pretas em cima e embaixo em qualquer tela que não fosse 16:9 — em pé
+     sobrava mais faixa do que painel. */
+  var canvas = document.getElementById('canvas');
+  function fitCanvas(){
+    var retrato = window.innerHeight > window.innerWidth;
+    var base = retrato ? 1080 : 1920;
+    var s = window.innerWidth / base;
+    canvas.classList.toggle('retrato', retrato);
+    canvas.style.width  = base + 'px';
+    canvas.style.height = (window.innerHeight / s) + 'px';
+    canvas.style.transform = 'scale(' + s + ')';
+  }
+  window.addEventListener('resize', fitCanvas);
+  window.addEventListener('orientationchange', fitCanvas);
+  fitCanvas();
+
+  /* ── Relógio ── */
+  var elTime = document.getElementById('clockTime');
+  var elDate = document.getElementById('clockDate');
+  function tick(){
+    var d = new Date();
+    elTime.textContent = d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    /* "segunda-feira, 10 de agosto" → só a primeira letra em maiúscula.
+       O capitalize do CSS deixaria "10 De Agosto". */
+    var data = d.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'});
+    elDate.textContent = data.charAt(0).toUpperCase() + data.slice(1);
+  }
+  tick();
+  setInterval(tick, 15000);
+
+  /* ── Clima ──
+     Quem consulta é o navegador que está mostrando o painel, direto na
+     open-meteo.com: é aberta, não pede cadastro nem chave e responde com CORS
+     liberado. A ponte não entra nisso — nada aqui toca no Mac, e nenhuma rota
+     nova foi aberta no servidor.
+
+     A cidade sai do `clima` no arquivo de configuração. A tela de ajuste
+     preserva as chaves que não conhece, então esse trecho sobrevive a qualquer
+     gravação de botões, e cada Mac pode apontar para uma cidade diferente. */
+  var CLIMA_PADRAO = { nome: 'São Paulo', lat: -23.5505, lon: -46.6333 };
+
+  /* Códigos WMO, que é o que a open-meteo devolve. Agrupados de propósito: o
+     painel é lido de longe, então vale a figura, não a nuance. */
+  function tempoDe(codigo){
+    if (codigo === 0)  return { icone: '☀️',  texto: 'Céu limpo' };
+    if (codigo <= 2)   return { icone: '🌤️', texto: 'Sol entre nuvens' };
+    if (codigo === 3)  return { icone: '☁️',  texto: 'Nublado' };
+    if (codigo <= 48)  return { icone: '🌫️', texto: 'Névoa' };
+    if (codigo <= 57)  return { icone: '🌦️', texto: 'Garoa' };
+    if (codigo <= 67)  return { icone: '🌧️', texto: 'Chuva' };
+    if (codigo <= 77)  return { icone: '🌨️', texto: 'Neve' };
+    if (codigo <= 82)  return { icone: '🌦️', texto: 'Pancadas de chuva' };
+    if (codigo <= 86)  return { icone: '🌨️', texto: 'Neve' };
+    return { icone: '⛈️', texto: 'Tempestade' };
+  }
+
+  function mostrarClima(){
+    var c = (CONFIG && CONFIG.clima) || CLIMA_PADRAO;
+    var url = 'https://api.open-meteo.com/v1/forecast'
+      + '?latitude='  + encodeURIComponent(c.lat)
+      + '&longitude=' + encodeURIComponent(c.lon)
+      + '&current=temperature_2m,weather_code'
+      + '&daily=temperature_2m_max,temperature_2m_min'
+      + '&timezone=auto&forecast_days=1';
+
+    fetch(url, {cache: 'no-store'})
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var tempo = tempoDe(d.current.weather_code);
+        document.getElementById('climaIcone').textContent = tempo.icone;
+        document.getElementById('climaTemp').textContent =
+          Math.round(d.current.temperature_2m) + '°';
+        var linha = document.getElementById('climaLinha');
+        linha.textContent = tempo.texto
+          + ' · ' + Math.round(d.daily.temperature_2m_max[0]) + '°'
+          + ' / ' + Math.round(d.daily.temperature_2m_min[0]) + '°';
+        /* a cidade vai num elemento próprio para o CSS poder escondê-la em pé,
+           onde a barra é mais estreita */
+        if (c.nome) {
+          var cidade = elemento('span', 'clima-cidade', ' · ' + c.nome);
+          linha.appendChild(cidade);
+        }
+        document.getElementById('clima').hidden = false;
+      })
+      .catch(function(){
+        /* sem internet, ou a api fora do ar: o painel segue sem o clima, em vez
+           de mostrar um bloco parado com traços no lugar da temperatura */
+        document.getElementById('clima').hidden = true;
+      });
+  }
+
+  /* espera a configuração chegar para saber a cidade; depois, de meia em meia
+     hora — bem mais rápido do que o tempo muda, e com um número irrisório de
+     consultas */
+  document.addEventListener('cockpit:desenhado', mostrarClima, {once: true});
+  setInterval(mostrarClima, 30 * 60 * 1000);
+
+  /* ── Botão de tela cheia ──
+     Serve o painel aberto no navegador do Mac, onde resolve no toque sem F11.
+
+     O Safari do iPad não implementa a API de tela cheia para elementos comuns
+     (só para vídeo), então lá o botão não teria como funcionar. Em vez de
+     deixá-lo à toa esperando um toque que não faz nada, ele sai da barra: no
+     iPad o painel fica em tela cheia pelo atalho na Tela de Início. */
+  if (!document.documentElement.requestFullscreen) {
+    document.getElementById('fsBtn').hidden = true;
+  }
+  document.getElementById('fsBtn').addEventListener('click', function(){
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      document.documentElement.requestFullscreen().catch(function(){ /* navegador recusou; sem problema */ });
+    }
+  });
+  document.addEventListener('fullscreenchange', function(){
+    document.getElementById('fsBtn').textContent = document.fullscreenElement ? '⛶' : '⛶';
+  });
+
+  /* ── Aposentadoria do service worker ──
+     Existiu um sw.js aqui. Ele nunca funcionou no uso real: a página é servida
+     por http num endereço da rede local, e os navegadores só registram service worker em
+     https ou localhost. Esta limpeza desfaz os registros que sobraram dos
+     testes feitos em localhost, que de outro modo ficariam para sempre. */
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations()
+      .then(function(registros){ registros.forEach(function(r){ r.unregister(); }); })
+      .catch(function(){});
+  }
+  if (window.caches && caches.delete) { caches.delete('cockpit-v1'); }
+</script>
+
+</body>
+</html>
